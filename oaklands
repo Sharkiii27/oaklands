@@ -16,9 +16,12 @@ local freecamPart = nil
 
 -- ==================== Teleport Section ====================
 local savedTeleports = {
-    {Name = "Snow Biome", Position = Vector3.new(-7422.5, 1188.6, -3564.2)},
-    {Name = "Resource Hub", Position = Vector3.new(-54.8, 35.9, -74.4)},
-    {Name = "Void Biome", Position = Vector3.new(2387.3, -1867.4, 1324.9)}
+    {Name = "💵Resource Hub", Position = Vector3.new(-54.8, 35.9, -74.4)},
+    {Name = "💵OakDepot", Position = Vector3.new(303.5, 33.0, -575.8)},
+    {Name = "🌳Snow Biome", Position = Vector3.new(-7422.5, 1188.6, -3564.2)},
+    {Name = "🌳Sui Tree", Position = Vector3.new(1629.1, -1785.9, 1391.6)},
+    {Name = "🌳Plek Cave", Position = Vector3.new(-2655.5, -817.3, 1323.3)},
+    {Name = "🌳Magma Forest", Position = Vector3.new(-1593.3, -317.9, 306.7)}
 }
 
 -- ==================== GUI ====================
@@ -86,9 +89,9 @@ local function CreateTabBtn(text, pos)
 	return btn
 end
 
-local FarmTabBtn = CreateTabBtn("Farm",0)
-local TeleportTabBtn = CreateTabBtn("Teleport",0.33)
-local SettingsTabBtn = CreateTabBtn("Settings",0.66)
+local FarmTabBtn = CreateTabBtn("🌳Main",0)
+local TeleportTabBtn = CreateTabBtn("✨Teleport",0.33)
+local SettingsTabBtn = CreateTabBtn("⚙️Misc",0.66)
 
 local Scrolling = Instance.new("ScrollingFrame")
 Scrolling.Size = UDim2.new(1,-20,1,-110)
@@ -160,7 +163,7 @@ local function ShowFarm()
 	local ToggleBtn = Instance.new("TextButton")
 	ToggleBtn.Size = UDim2.new(1,0,0,60)
 	ToggleBtn.BackgroundColor3 = autoTreeTeleport and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
-	ToggleBtn.Text = autoTreeTeleport and "🟢 Tree teleporter ON" or "🔴 Tree teleporter OFF"
+	ToggleBtn.Text = autoTreeTeleport and "✅ Tree TP ON" or "❌ Tree TP OFF"
 	ToggleBtn.TextColor3 = Color3.new(1,1,1)
 	ToggleBtn.Parent = Scrolling
 
@@ -172,7 +175,7 @@ local function ShowFarm()
 	local SaveBtn = Instance.new("TextButton")
 	SaveBtn.Size = UDim2.new(1,0,0,50)
 	SaveBtn.BackgroundColor3 = Color3.fromRGB(0,120,255)
-	SaveBtn.Text = "Set Teleport Target"
+	SaveBtn.Text = "Set Tree Destination (POS)"
 	SaveBtn.TextColor3 = Color3.new(1,1,1)
 	SaveBtn.Parent = Scrolling
 
@@ -191,7 +194,7 @@ local function ShowTeleports()
 	local AddBtn = Instance.new("TextButton")
 	AddBtn.Size = UDim2.new(1,0,0,50)
 	AddBtn.BackgroundColor3 = Color3.fromRGB(0,180,100)
-	AddBtn.Text = "Add Teleport Location"
+	AddBtn.Text = "+ TP Location"
 	AddBtn.TextColor3 = Color3.new(1,1,1)
 	AddBtn.Parent = Scrolling
 
@@ -206,7 +209,7 @@ local function ShowTeleports()
 
 		if pos then
 			table.insert(savedTeleports,{
-				Name = "📍 Dot "..(#savedTeleports + 1),
+				Name = "Position "..(#savedTeleports + 1),
 				Position = pos
 			})
 
@@ -218,7 +221,7 @@ local function ShowTeleports()
 		local btn = Instance.new("TextButton")
 		btn.Size = UDim2.new(1,0,0,45)
 		btn.BackgroundColor3 = Color3.fromRGB(45,45,50)
-		btn.Text = "🚀 "..loc.Name
+		btn.Text = "✨ "..loc.Name
 		btn.TextColor3 = Color3.new(1,1,1)
 		btn.Parent = Scrolling
 
@@ -236,7 +239,7 @@ local function ShowSettings()
 	local FBtn = Instance.new("TextButton")
 	FBtn.Size = UDim2.new(1,0,0,60)
 	FBtn.BackgroundColor3 = clickTeleportPlayer and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
-	FBtn.Text = clickTeleportPlayer and "🟢 Teleport (F) ON" or "🔴 Teleport (F) OFF"
+	FBtn.Text = clickTeleportPlayer and "✅ Teleport (F) ON" or "❌ Teleport (F) OFF"
 	FBtn.TextColor3 = Color3.new(1,1,1)
 	FBtn.Parent = Scrolling
 
@@ -248,7 +251,7 @@ local function ShowSettings()
 	local CamBtn = Instance.new("TextButton")
 	CamBtn.Size = UDim2.new(1,0,0,60)
 	CamBtn.BackgroundColor3 = freecamActive and Color3.fromRGB(0,170,0) or Color3.fromRGB(60,60,60)
-	CamBtn.Text = freecamActive and "Freecam ON" or "Freecam OFF"
+	CamBtn.Text = freecamActive and "✅Freecam ON" or "❌Freecam OFF"
 	CamBtn.TextColor3 = Color3.new(1,1,1)
 	CamBtn.Parent = Scrolling
 
