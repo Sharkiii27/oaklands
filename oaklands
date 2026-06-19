@@ -1,70 +1,89 @@
 --// SERVICES
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
-
---// STATE
-local targetTreePos = nil
-local autoTreeTeleport = false
-local clickTeleportPlayer = true
-local freecamActive = false
-local freecamPart = nil
-
---// TELEPORTS
-local savedTeleports = {
-    {Name = "Snow Biome", Position = Vector3.new(-7422.5, 1188.6, -3564.2)},
-    {Name = "Resource Hub", Position = Vector3.new(-54.8, 35.9, -74.4)},
-    {Name = "Void Biome", Position = Vector3.new(2387.3, -1867.4, 1324.9)}
-}
 
 --// UI THEME
 local Theme = {
-    Bg = Color3.fromRGB(15,18,24),
-    Panel = Color3.fromRGB(22,27,34),
-    Accent = Color3.fromRGB(0,170,255),
-    Text = Color3.fromRGB(255,255,255)
+	Bg = Color3.fromRGB(15,18,24),
+	Panel = Color3.fromRGB(22,27,34),
+	Element = Color3.fromRGB(30,35,43),
+	Accent = Color3.fromRGB(0,170,255),
+	Text = Color3.fromRGB(255,255,255),
+	SubText = Color3.fromRGB(160,168,180),
+	ToggleOff = Color3.fromRGB(60,65,75),
+	ToggleOn = Color3.fromRGB(0,170,255)
 }
 
 --// GUI ROOT
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Oaklands_Modern_Hub"
+ScreenGui.Name = "ModernHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game:GetService("CoreGui")
 
 local Frame = Instance.new("Frame")
+Frame.Name = "MainFrame"
 Frame.Size = UDim2.new(0, 520, 0, 360)
 Frame.Position = UDim2.new(0.5, -260, 0.5, -180)
 Frame.BackgroundColor3 = Theme.Bg
 Frame.BorderSizePixel = 0
+Frame.ClipsDescendants = true
 Frame.Parent = ScreenGui
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 14)
 
---// HEADER
+--// HEADER (drag handle + title + minimize button)
 local Header = Instance.new("Frame")
+Header.Name = "Header"
 Header.Size = UDim2.new(1,0,0,45)
 Header.BackgroundColor3 = Theme.Panel
 Header.BorderSizePixel = 0
 Header.Parent = Frame
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
+-- mask the bottom corners of the header so it looks flush with the body
+local HeaderMask = Instance.new("Frame")
+HeaderMask.BackgroundColor3 = Theme.Panel
+HeaderMask.BorderSizePixel = 0
+HeaderMask.Size = UDim2.new(1,0,0,14)
+HeaderMask.Position = UDim2.new(0,0,1,-14)
+HeaderMask.Parent = Header
+
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1,-20,1,0)
-Title.Position = UDim2.new(0,10,0,0)
+Title.Size = UDim2.new(1,-90,1,0)
+Title.Position = UDim2.new(0,15,0,0)
 Title.BackgroundTransparency = 1
-Title.Text = "Sharks Hub"
+Title.Text = "Modern Hub"
 Title.TextColor3 = Theme.Text
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
+--// MINIMIZE BUTTON (X in top right)
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Name = "MinimizeButton"
+MinimizeBtn.Size = UDim2.new(0,30,0,30)
+MinimizeBtn.Position = UDim2.new(1,-40,0.5,-15)
+MinimizeBtn.BackgroundColor3 = Theme.Element
+MinimizeBtn.Text = "X"
+MinimizeBtn.TextColor3 = Theme.Text
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.TextSize = 14
+MinimizeBtn.Parent = Header
+Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0,8)
+
+MinimizeBtn.MouseEnter:Connect(function()
+	TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(200,60,60)}):Play()
+end)
+MinimizeBtn.MouseLeave:Connect(function()
+	TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Element}):Play()
+end)
+
 --// SIDEBAR
 local Sidebar = Instance.new("Frame")
+Sidebar.Name = "Sidebar"
 Sidebar.Size = UDim2.new(0,140,1,-45)
 Sidebar.Position = UDim2.new(0,0,0,45)
 Sidebar.BackgroundColor3 = Theme.Panel
@@ -72,12 +91,33 @@ Sidebar.BorderSizePixel = 0
 Sidebar.Parent = Frame
 Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 14)
 
---// CONTENT
+local SidebarMask = Instance.new("Frame")
+SidebarMask.BackgroundColor3 = Theme.Panel
+SidebarMask.BorderSizePixel = 0
+SidebarMask.Size = UDim2.new(0,14,1,0)
+SidebarMask.Position = UDim2.new(1,-14,0,0)
+SidebarMask.Parent = Sidebar
+
+local SidebarList = Instance.new("UIListLayout")
+SidebarList.Padding = UDim.new(0,6)
+SidebarList.Parent = Sidebar
+
+local SidebarPad = Instance.new("UIPadding")
+SidebarPad.PaddingTop = UDim.new(0,8)
+SidebarPad.PaddingLeft = UDim.new(0,5)
+SidebarPad.PaddingRight = UDim.new(0,5)
+SidebarPad.Parent = Sidebar
+
+--// CONTENT AREA
 local Content = Instance.new("ScrollingFrame")
+Content.Name = "Content"
 Content.Size = UDim2.new(1,-150,1,-55)
 Content.Position = UDim2.new(0,145,0,50)
 Content.BackgroundTransparency = 1
 Content.ScrollBarThickness = 4
+Content.ScrollBarImageColor3 = Theme.Accent
+Content.CanvasSize = UDim2.new(0,0,0,0)
+Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Content.Parent = Frame
 
 local Layout = Instance.new("UIListLayout")
@@ -92,197 +132,257 @@ local function Clear()
 	end
 end
 
---// TAB SYSTEM
-local function Button(text, y, callback)
+----------------------------------------------------------------
+--// DRAGGING (works on both PC mouse and touch)
+----------------------------------------------------------------
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function updateDrag(input)
+	local delta = input.Position - dragStart
+	Frame.Position = UDim2.new(
+		startPos.X.Scale, startPos.X.Offset + delta.X,
+		startPos.Y.Scale, startPos.Y.Offset + delta.Y
+	)
+end
+
+Header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = Frame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+Header.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		updateDrag(input)
+	end
+end)
+
+----------------------------------------------------------------
+--// MINIMIZE / RESTORE ANIMATION
+----------------------------------------------------------------
+local minimized = false
+local expandedSize = Frame.Size
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+	minimized = not minimized
+
+	if minimized then
+		-- shrink down to just the header bar
+		TweenService:Create(Frame, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			Size = UDim2.new(0, expandedSize.X.Offset, 0, 45)
+		}):Play()
+		Sidebar.Visible = false
+		Content.Visible = false
+		MinimizeBtn.Text = "+"
+	else
+		TweenService:Create(Frame, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+			Size = expandedSize
+		}):Play()
+		task.delay(0.05, function()
+			Sidebar.Visible = true
+			Content.Visible = true
+		end)
+		MinimizeBtn.Text = "X"
+	end
+end)
+
+----------------------------------------------------------------
+--// REUSABLE ELEMENT BUILDERS
+----------------------------------------------------------------
+
+-- Sidebar tab button
+local function TabButton(text, callback)
 	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(1,-10,0,38)
-	b.Position = UDim2.new(0,5,0,y)
-	b.BackgroundColor3 = Theme.Bg
+	b.Size = UDim2.new(1,0,0,38)
+	b.BackgroundColor3 = Theme.Element
 	b.Text = text
 	b.TextColor3 = Theme.Text
 	b.Font = Enum.Font.Gotham
 	b.TextSize = 14
+	b.AutoButtonColor = false
 	b.Parent = Sidebar
-
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
 
-	b.MouseButton1Click:Connect(callback)
+	b.MouseEnter:Connect(function()
+		TweenService:Create(b, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Accent}):Play()
+	end)
+	b.MouseLeave:Connect(function()
+		TweenService:Create(b, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Element}):Play()
+	end)
 
+	b.MouseButton1Click:Connect(callback)
 	return b
 end
 
---// FREECAM
-local function ToggleFreecam()
-	freecamActive = not freecamActive
+-- Simple action button for content area
+local function ActionButton(text, color, callback)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(1,0,0,44)
+	b.BackgroundColor3 = color or Theme.Element
+	b.Text = text
+	b.TextColor3 = Theme.Text
+	b.Font = Enum.Font.Gotham
+	b.TextSize = 14
+	b.AutoButtonColor = false
+	b.Parent = Content
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0,10)
 
-	if freecamActive then
-		freecamPart = Instance.new("Part")
-		freecamPart.Anchored = true
-		freecamPart.Transparency = 1
-		freecamPart.CanCollide = false
-		freecamPart.Size = Vector3.new(1,1,1)
-		freecamPart.CFrame = Camera.CFrame
-		freecamPart.Parent = Workspace
-
-		Camera.CameraSubject = freecamPart
-	else
-		if freecamPart then freecamPart:Destroy() end
-		if LocalPlayer.Character then
-			Camera.CameraSubject = LocalPlayer.Character:FindFirstChild("Humanoid")
-		end
-	end
+	b.MouseButton1Click:Connect(function()
+		if callback then callback() end
+	end)
+	return b
 end
 
-RunService.RenderStepped:Connect(function()
-	if freecamActive and freecamPart then
-		local dir = Vector3.zero
-		local speed = 2.5
+-- Animated toggle switch row. `default` = true/false, `onChanged(state)` fires when flipped
+local function ToggleRow(labelText, default, onChanged)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1,0,0,44)
+	row.BackgroundColor3 = Theme.Element
+	row.Parent = Content
+	Instance.new("UICorner", row).CornerRadius = UDim.new(0,10)
 
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir += Camera.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir -= Camera.CFrame.LookVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir -= Camera.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir += Camera.CFrame.RightVector end
-		if UserInputService:IsKeyDown(Enum.KeyCode.E) then dir += Vector3.new(0,1,0) end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Q) then dir -= Vector3.new(0,1,0) end
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1,-70,1,0)
+	label.Position = UDim2.new(0,14,0,0)
+	label.BackgroundTransparency = 1
+	label.Text = labelText
+	label.TextColor3 = Theme.Text
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = row
 
-		freecamPart.CFrame += dir * speed
-	end
-end)
+	-- track
+	local track = Instance.new("Frame")
+	track.Size = UDim2.new(0,44,0,22)
+	track.Position = UDim2.new(1,-58,0.5,-11)
+	track.BackgroundColor3 = default and Theme.ToggleOn or Theme.ToggleOff
+	track.Parent = row
+	Instance.new("UICorner", track).CornerRadius = UDim.new(1,0)
 
---// TELEPORT TREE
-local function TeleportTree(part, pos)
-	if not part then return end
-	local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
+	-- knob
+	local knob = Instance.new("Frame")
+	knob.Size = UDim2.new(0,18,0,18)
+	knob.Position = default and UDim2.new(1,-20,0.5,-9) or UDim2.new(0,2,0.5,-9)
+	knob.BackgroundColor3 = Theme.Text
+	knob.Parent = track
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
 
-	part.CFrame = hrp.CFrame * CFrame.new(0,0,-7)
-	task.wait(0.15)
+	local state = default
+	local clicker = Instance.new("TextButton")
+	clicker.Size = UDim2.new(1,0,1,0)
+	clicker.BackgroundTransparency = 1
+	clicker.Text = ""
+	clicker.Parent = track
 
-	local t = tick()
-	while tick() - t < 0.8 do
-		part.CFrame = CFrame.new(pos + Vector3.new(0,12,0))
-		RunService.Heartbeat:Wait()
-	end
+	clicker.MouseButton1Click:Connect(function()
+		state = not state
+
+		TweenService:Create(track, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+			BackgroundColor3 = state and Theme.ToggleOn or Theme.ToggleOff
+		}):Play()
+
+		TweenService:Create(knob, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+			Position = state and UDim2.new(1,-20,0.5,-9) or UDim2.new(0,2,0.5,-9)
+		}):Play()
+
+		if onChanged then onChanged(state) end
+	end)
+
+	return row
 end
 
---// FARM TAB
-local function Farm()
+-- Section header label inside content area
+local function SectionLabel(text)
+	local l = Instance.new("TextLabel")
+	l.Size = UDim2.new(1,0,0,24)
+	l.BackgroundTransparency = 1
+	l.Text = text
+	l.TextColor3 = Theme.SubText
+	l.Font = Enum.Font.GothamBold
+	l.TextSize = 13
+	l.TextXAlignment = Enum.TextXAlignment.Left
+	l.Parent = Content
+	return l
+end
+
+----------------------------------------------------------------
+--// EXAMPLE TABS
+--// ↓↓↓ REPLACE THE CONTENTS OF THESE FUNCTIONS WITH YOUR OWN LOGIC ↓↓↓
+----------------------------------------------------------------
+
+local function TabOne()
 	Clear()
+	SectionLabel("Example Toggles")
 
-	local t = Instance.new("TextButton")
-	t.Size = UDim2.new(1,0,0,50)
-	t.BackgroundColor3 = autoTreeTeleport and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
-	t.Text = "Tree Teleport Toggle"
-	t.TextColor3 = Color3.new(1,1,1)
-	t.Parent = Content
-
-	t.MouseButton1Click:Connect(function()
-		autoTreeTeleport = not autoTreeTeleport
-		Farm()
+	-- ===== REPLACE HERE: put your real toggle logic in the onChanged callback =====
+	ToggleRow("Example Toggle A", false, function(state)
+		print("Toggle A is now", state)
+		-- your feature on/off code goes here
 	end)
 
-	local s = Instance.new("TextButton")
-	s.Size = UDim2.new(1,0,0,50)
-	s.BackgroundColor3 = Theme.Accent
-	s.Text = "Set Target"
-	s.TextColor3 = Color3.new(1,1,1)
-	s.Parent = Content
-
-	s.MouseButton1Click:Connect(function()
-		if LocalPlayer.Character and LocalPlayer.Character.PrimaryPart then
-			targetTreePos = LocalPlayer.Character.PrimaryPart.Position
-		end
+	ToggleRow("Example Toggle B", true, function(state)
+		print("Toggle B is now", state)
+		-- your feature on/off code goes here
 	end)
+	-- ===== END REPLACE =====
+
+	SectionLabel("Example Actions")
+
+	-- ===== REPLACE HERE: put your real button logic in the callback =====
+	ActionButton("Example Action Button", Theme.Accent, function()
+		print("Action button pressed")
+		-- your one-shot action code goes here
+	end)
+	-- ===== END REPLACE =====
 end
 
---// TELEPORT TAB
-local function Teleports()
+local function TabTwo()
 	Clear()
+	SectionLabel("Another Tab")
 
-	local add = Instance.new("TextButton")
-	add.Size = UDim2.new(1,0,0,50)
-	add.BackgroundColor3 = Color3.fromRGB(0,180,100)
-	add.Text = "Add Location"
-	add.TextColor3 = Color3.new(1,1,1)
-	add.Parent = Content
-
-	add.MouseButton1Click:Connect(function()
-		local pos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-		if pos then
-			table.insert(savedTeleports,{
-				Name = "Point "..#savedTeleports+1,
-				Position = pos.Position
-			})
-			Teleports()
-		end
+	-- ===== REPLACE HERE =====
+	ToggleRow("Another Toggle", false, function(state)
+		print("Another toggle is now", state)
 	end)
-
-	for _,v in ipairs(savedTeleports) do
-		local b = Instance.new("TextButton")
-		b.Size = UDim2.new(1,0,0,40)
-		b.Text = v.Name
-		b.TextColor3 = Color3.new(1,1,1)
-		b.Parent = Content
-
-		b.MouseButton1Click:Connect(function()
-			if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-				LocalPlayer.Character.HumanoidRootPart.CFrame =
-					CFrame.new(v.Position + Vector3.new(0,5,0))
-			end
-		end)
-	end
+	-- ===== END REPLACE =====
 end
 
---// SETTINGS TAB
-local function Settings()
+local function TabThree()
 	Clear()
+	SectionLabel("Settings")
 
-	local f = Instance.new("TextButton")
-	f.Size = UDim2.new(1,0,0,50)
-	f.Text = "Toggle F Teleport"
-	f.Parent = Content
-
-	f.MouseButton1Click:Connect(function()
-		clickTeleportPlayer = not clickTeleportPlayer
-		Settings()
+	-- ===== REPLACE HERE =====
+	ToggleRow("Example Setting", false, function(state)
+		print("Setting is now", state)
 	end)
-
-	local c = Instance.new("TextButton")
-	c.Size = UDim2.new(1,0,0,50)
-	c.Text = "Toggle Freecam"
-	c.Parent = Content
-
-	c.MouseButton1Click:Connect(function()
-		ToggleFreecam()
-		Settings()
-	end)
+	-- ===== END REPLACE =====
 end
 
---// INPUT
-UserInputService.InputBegan:Connect(function(input,gp)
-	if gp then return end
+----------------------------------------------------------------
+--// SIDEBAR TAB BUTTONS
+--// ↓↓↓ RENAME / ADD / REMOVE TABS HERE ↓↓↓
+----------------------------------------------------------------
+TabButton("Tab One", TabOne)
+TabButton("Tab Two", TabTwo)
+TabButton("Settings", TabThree)
 
-	if input.KeyCode == Enum.KeyCode.F and clickTeleportPlayer then
-		local m = LocalPlayer:GetMouse()
-		if m.Hit and LocalPlayer.Character then
-			LocalPlayer.Character.HumanoidRootPart.CFrame =
-				CFrame.new(m.Hit.Position + Vector3.new(0,3,0))
-		end
-	end
-
-	if input.UserInputType == Enum.UserInputType.MouseButton1 and autoTreeTeleport then
-		local m = LocalPlayer:GetMouse()
-		if m.Target and targetTreePos then
-			local model = m.Target:FindFirstAncestorOfClass("Model") or m.Target.Parent
-			local part = model.PrimaryPart or m.Target
-			TeleportTree(part, targetTreePos)
-		end
-	end
-end)
-
---// BUTTONS
-Button("Farm", 10, Farm)
-Button("Teleport", 55, Teleports)
-Button("Settings", 100, Settings)
-
-Farm()
+-- open default tab
+TabOne()
