@@ -221,7 +221,7 @@ local function ShowTeleports()
 		local btn = Instance.new("TextButton")
 		btn.Size = UDim2.new(1,0,0,45)
 		btn.BackgroundColor3 = Color3.fromRGB(45,45,50)
-		btn.Text = "✨ "..loc.Name
+		btn.Text = "-"..loc.Name
 		btn.TextColor3 = Color3.new(1,1,1)
 		btn.Parent = Scrolling
 
