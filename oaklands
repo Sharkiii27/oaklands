@@ -1,0 +1,288 @@
+--// SERVICES
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+--// STATE
+local targetTreePos = nil
+local autoTreeTeleport = false
+local clickTeleportPlayer = true
+local freecamActive = false
+local freecamPart = nil
+
+--// TELEPORTS
+local savedTeleports = {
+    {Name = "Snow Biome", Position = Vector3.new(-7422.5, 1188.6, -3564.2)},
+    {Name = "Resource Hub", Position = Vector3.new(-54.8, 35.9, -74.4)},
+    {Name = "Void Biome", Position = Vector3.new(2387.3, -1867.4, 1324.9)}
+}
+
+--// UI THEME
+local Theme = {
+    Bg = Color3.fromRGB(15,18,24),
+    Panel = Color3.fromRGB(22,27,34),
+    Accent = Color3.fromRGB(0,170,255),
+    Text = Color3.fromRGB(255,255,255)
+}
+
+--// GUI ROOT
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Oaklands_Modern_Hub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game:GetService("CoreGui")
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 520, 0, 360)
+Frame.Position = UDim2.new(0.5, -260, 0.5, -180)
+Frame.BackgroundColor3 = Theme.Bg
+Frame.BorderSizePixel = 0
+Frame.Parent = ScreenGui
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 14)
+
+--// HEADER
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,45)
+Header.BackgroundColor3 = Theme.Panel
+Header.BorderSizePixel = 0
+Header.Parent = Frame
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,-20,1,0)
+Title.Position = UDim2.new(0,10,0,0)
+Title.BackgroundTransparency = 1
+Title.Text = "Sharks Hub"
+Title.TextColor3 = Theme.Text
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+--// SIDEBAR
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0,140,1,-45)
+Sidebar.Position = UDim2.new(0,0,0,45)
+Sidebar.BackgroundColor3 = Theme.Panel
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = Frame
+Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 14)
+
+--// CONTENT
+local Content = Instance.new("ScrollingFrame")
+Content.Size = UDim2.new(1,-150,1,-55)
+Content.Position = UDim2.new(0,145,0,50)
+Content.BackgroundTransparency = 1
+Content.ScrollBarThickness = 4
+Content.Parent = Frame
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0,8)
+Layout.Parent = Content
+
+local function Clear()
+	for _,v in pairs(Content:GetChildren()) do
+		if v:IsA("GuiObject") and v ~= Layout then
+			v:Destroy()
+		end
+	end
+end
+
+--// TAB SYSTEM
+local function Button(text, y, callback)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(1,-10,0,38)
+	b.Position = UDim2.new(0,5,0,y)
+	b.BackgroundColor3 = Theme.Bg
+	b.Text = text
+	b.TextColor3 = Theme.Text
+	b.Font = Enum.Font.Gotham
+	b.TextSize = 14
+	b.Parent = Sidebar
+
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
+
+	b.MouseButton1Click:Connect(callback)
+
+	return b
+end
+
+--// FREECAM
+local function ToggleFreecam()
+	freecamActive = not freecamActive
+
+	if freecamActive then
+		freecamPart = Instance.new("Part")
+		freecamPart.Anchored = true
+		freecamPart.Transparency = 1
+		freecamPart.CanCollide = false
+		freecamPart.Size = Vector3.new(1,1,1)
+		freecamPart.CFrame = Camera.CFrame
+		freecamPart.Parent = Workspace
+
+		Camera.CameraSubject = freecamPart
+	else
+		if freecamPart then freecamPart:Destroy() end
+		if LocalPlayer.Character then
+			Camera.CameraSubject = LocalPlayer.Character:FindFirstChild("Humanoid")
+		end
+	end
+end
+
+RunService.RenderStepped:Connect(function()
+	if freecamActive and freecamPart then
+		local dir = Vector3.zero
+		local speed = 2.5
+
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir += Camera.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir -= Camera.CFrame.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir -= Camera.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir += Camera.CFrame.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.E) then dir += Vector3.new(0,1,0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Q) then dir -= Vector3.new(0,1,0) end
+
+		freecamPart.CFrame += dir * speed
+	end
+end)
+
+--// TELEPORT TREE
+local function TeleportTree(part, pos)
+	if not part then return end
+	local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	part.CFrame = hrp.CFrame * CFrame.new(0,0,-7)
+	task.wait(0.15)
+
+	local t = tick()
+	while tick() - t < 0.8 do
+		part.CFrame = CFrame.new(pos + Vector3.new(0,12,0))
+		RunService.Heartbeat:Wait()
+	end
+end
+
+--// FARM TAB
+local function Farm()
+	Clear()
+
+	local t = Instance.new("TextButton")
+	t.Size = UDim2.new(1,0,0,50)
+	t.BackgroundColor3 = autoTreeTeleport and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
+	t.Text = "Tree Teleport Toggle"
+	t.TextColor3 = Color3.new(1,1,1)
+	t.Parent = Content
+
+	t.MouseButton1Click:Connect(function()
+		autoTreeTeleport = not autoTreeTeleport
+		Farm()
+	end)
+
+	local s = Instance.new("TextButton")
+	s.Size = UDim2.new(1,0,0,50)
+	s.BackgroundColor3 = Theme.Accent
+	s.Text = "Set Target"
+	s.TextColor3 = Color3.new(1,1,1)
+	s.Parent = Content
+
+	s.MouseButton1Click:Connect(function()
+		if LocalPlayer.Character and LocalPlayer.Character.PrimaryPart then
+			targetTreePos = LocalPlayer.Character.PrimaryPart.Position
+		end
+	end)
+end
+
+--// TELEPORT TAB
+local function Teleports()
+	Clear()
+
+	local add = Instance.new("TextButton")
+	add.Size = UDim2.new(1,0,0,50)
+	add.BackgroundColor3 = Color3.fromRGB(0,180,100)
+	add.Text = "Add Location"
+	add.TextColor3 = Color3.new(1,1,1)
+	add.Parent = Content
+
+	add.MouseButton1Click:Connect(function()
+		local pos = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if pos then
+			table.insert(savedTeleports,{
+				Name = "Point "..#savedTeleports+1,
+				Position = pos.Position
+			})
+			Teleports()
+		end
+	end)
+
+	for _,v in ipairs(savedTeleports) do
+		local b = Instance.new("TextButton")
+		b.Size = UDim2.new(1,0,0,40)
+		b.Text = v.Name
+		b.TextColor3 = Color3.new(1,1,1)
+		b.Parent = Content
+
+		b.MouseButton1Click:Connect(function()
+			if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+				LocalPlayer.Character.HumanoidRootPart.CFrame =
+					CFrame.new(v.Position + Vector3.new(0,5,0))
+			end
+		end)
+	end
+end
+
+--// SETTINGS TAB
+local function Settings()
+	Clear()
+
+	local f = Instance.new("TextButton")
+	f.Size = UDim2.new(1,0,0,50)
+	f.Text = "Toggle F Teleport"
+	f.Parent = Content
+
+	f.MouseButton1Click:Connect(function()
+		clickTeleportPlayer = not clickTeleportPlayer
+		Settings()
+	end)
+
+	local c = Instance.new("TextButton")
+	c.Size = UDim2.new(1,0,0,50)
+	c.Text = "Toggle Freecam"
+	c.Parent = Content
+
+	c.MouseButton1Click:Connect(function()
+		ToggleFreecam()
+		Settings()
+	end)
+end
+
+--// INPUT
+UserInputService.InputBegan:Connect(function(input,gp)
+	if gp then return end
+
+	if input.KeyCode == Enum.KeyCode.F and clickTeleportPlayer then
+		local m = LocalPlayer:GetMouse()
+		if m.Hit and LocalPlayer.Character then
+			LocalPlayer.Character.HumanoidRootPart.CFrame =
+				CFrame.new(m.Hit.Position + Vector3.new(0,3,0))
+		end
+	end
+
+	if input.UserInputType == Enum.UserInputType.MouseButton1 and autoTreeTeleport then
+		local m = LocalPlayer:GetMouse()
+		if m.Target and targetTreePos then
+			local model = m.Target:FindFirstAncestorOfClass("Model") or m.Target.Parent
+			local part = model.PrimaryPart or m.Target
+			TeleportTree(part, targetTreePos)
+		end
+	end
+end)
+
+--// BUTTONS
+Button("Farm", 10, Farm)
+Button("Teleport", 55, Teleports)
+Button("Settings", 100, Settings)
+
+Farm()
